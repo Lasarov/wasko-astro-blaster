@@ -99,6 +99,9 @@
     border:3px solid;border-color:#fff #404040 #404040 #fff;
     box-shadow:3px 3px 0 #000;color:#000;padding:13px 10px;cursor:pointer;width:100%}
   .btn98:active{border-color:#404040 #fff #fff #404040;transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
+  .invscore{background:#12002e;border:2px solid #ffd23a;color:#ffe36e;font-size:14px;
+    padding:10px;margin:18px 0 4px;line-height:1.5;font-family:'Comic Sans MS','Trebuchet MS',cursive}
+  .invscore b{color:#fff}
   .foot{font-size:10px;color:#6d5fa8;margin-top:20px;line-height:1.7;font-family:'Trebuchet MS',sans-serif}
 
   /* ---------- bestenliste / namenseingabe (arcade-optik) ---------- */
@@ -199,8 +202,9 @@
     </div>
     <div class="pun">(Der Rest wurde bereits im Weltall entsorgt.)</div>
 
+    <div id="invScore" class="invscore"></div>
     <div class="btns">
-      <button class="btn98" id="bBoard" type="button">&#127942; Bestenliste</button>
+      <button class="btn98" id="bBoard" type="button">&#127942; Bestenliste &ndash; Platz 1 gewinnt Cr&eacute;mant</button>
       <button class="btn98" id="bMap" type="button">&#128205; Ort &ouml;ffnen</button>
       <button class="btn98" id="bAgain" type="button">&#127918; Nochmal spielen</button>
     </div>
@@ -840,6 +844,7 @@ function doWin(){
   SFX.fanfare();
   shake = 10;
   endRun(true);
+  autoSubmitIfKnown();
 }
 function doTimeUp(){
   state = 'TIMEUP'; endStat = kills; timeUpT = 0;
@@ -1043,21 +1048,18 @@ function update(dt){
   }
 }
 
-function askScore(){
-  const saved = (localStorage.getItem(LS_NAME) || '').trim();
-  if (saved.length >= 2){ nmIn.value = saved; doSubmit(); }   /* name schon bekannt: direkt eintragen */
-  else openNameEntry();
-}
 function updateEnd(dt){
   if (state === 'WIN'){
     winT += dt;
-    if (winT > 2.0 && !scoreAsked){
-      scoreAsked = true; scoreFrom = 'WIN'; state = 'SCORE'; askScore();
-    }
+    /* nach dem sieg kommt sofort die ueberraschung - keine eingabemaske dazwischen.
+       die bestenliste ist von der einladung aus erreichbar. */
+    if (winT > 2.0){ state = 'LOAD'; loadP = 0; }
   } else if (state === 'TIMEUP'){
     timeUpT += dt;
     if (timeUpT > 1.5 && !scoreAsked){
-      scoreAsked = true; scoreFrom = 'TIMEUP'; state = 'SCORE'; askScore();
+      scoreAsked = true; scoreFrom = 'TIMEUP'; state = 'SCORE'; boardMode = 'loss';
+      if (savedName().length >= 2){ nmIn.value = savedName(); doSubmit(); }
+      else openNameEntry('loss');
     }
   } else if (state === 'LOAD'){
     loadP = Math.min(1, loadP + dt/1.9);
@@ -1280,6 +1282,7 @@ function drawLoad(){
 const inviteEl = document.getElementById('invite');
 function showInvite(){
   state = 'INVITE';
+  updateInviteScore();
   inviteEl.classList.add('on');
   inviteEl.scrollTop = 0;
 }
@@ -1291,7 +1294,10 @@ document.getElementById('bAgain').addEventListener('click', ()=>{
   inviteEl.classList.remove('on');
   startGame();
 });
-document.getElementById('bBoard').addEventListener('click', ()=>{ showBoard(true, ''); });
+document.getElementById('bBoard').addEventListener('click', ()=>{
+  if (pendingRun && pendingRun.sent !== true) openNameEntry('invite');
+  else showBoard('invite', '');
+});
 
 
 /* =========================================================================
@@ -1301,13 +1307,19 @@ document.getElementById('bBoard').addEventListener('click', ()=>{ showBoard(true
    geteilt).
    ========================================================================= */
 const SUPABASE_URL = "";   /* <-- Project URL hier einsetzen, z.B. https://abcd.supabase.co */
-const SUPABASE_KEY = "";   /* <-- anon public key hier einsetzen                           */
+const SUPABASE_KEY = "";   /* <-- Publishable key hier einsetzen (sb_publishable_...)      */
 
 const SB_ON = !!(SUPABASE_URL && SUPABASE_KEY);
 const LS_NAME = 'wab_name', LS_SCORES = 'wab_scores';
 
-let pendingRun = null;    /* ergebnis des letzten laufs, noch nicht eingetragen */
-let boardOnly  = false;   /* nur ansehen (vom titel aus)                        */
+let pendingRun = null;      /* ergebnis des letzten laufs                    */
+let boardMode  = 'view';    /* 'view' | 'invite' | 'loss'                    */
+
+/* localStorage wirft beim oeffnen per datei (file://) eine ausnahme.
+   alles hier durchleiten, damit das spiel davon nie stehenbleibt. */
+function lsGet(k){ try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } }
+function lsSet(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+function savedName(){ return lsGet(LS_NAME).trim(); }
 
 function endRun(won){
   pendingRun = {
@@ -1315,25 +1327,29 @@ function endRun(won){
     score: score,
     kills: kills,
     secs: Math.round((ROUND_TIME - timeLeft) * 10) / 10,
-    won: won
+    won: won,
+    sent: false
   };
 }
 
 /* ---- lokaler speicher (fallback + offline-puffer) ---- */
 function lsRead(){
-  try { return JSON.parse(localStorage.getItem(LS_SCORES) || '[]'); }
+  try { return JSON.parse(lsGet(LS_SCORES) || '[]'); }
   catch(e){ return []; }
 }
 function lsAdd(e){
-  try {
-    const l = lsRead(); l.push(e);
-    localStorage.setItem(LS_SCORES, JSON.stringify(l.slice(-100)));
-  } catch(e){}
+  const l = lsRead(); l.push(e);
+  lsSet(LS_SCORES, JSON.stringify(l.slice(-100)));
 }
 
 /* ---- supabase ---- */
 function sbHeaders(extra){
-  return Object.assign({ apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }, extra || {});
+  const h = Object.assign({ apikey: SUPABASE_KEY }, extra || {});
+  /* alte anon-keys sind JWTs und wollen zusaetzlich den Authorization-header.
+     Die neuen publishable-keys (sb_publishable_...) sind keine JWTs und werden
+     dort abgelehnt - fuer sie reicht der apikey-header. */
+  if (/^eyJ/.test(SUPABASE_KEY)) h.Authorization = 'Bearer ' + SUPABASE_KEY;
+  return h;
 }
 async function boardFetch(){
   if (!SB_ON) return lsRead();
@@ -1347,15 +1363,27 @@ async function boardSubmit(entry){
   lsAdd(entry);                        /* immer auch lokal merken */
   if (!SB_ON) return;
   const url = SUPABASE_URL.replace(/\/+$/, '') + '/rest/v1/scores';
+  const body = { name: entry.name, score: entry.score, kills: entry.kills, secs: entry.secs, won: entry.won };
   const r = await fetch(url, {
     method: 'POST',
     headers: sbHeaders({ 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
-    body: JSON.stringify(entry)
+    body: JSON.stringify(body)
   });
   if (!r.ok){
     const t = await r.text();
     throw new Error('HTTP ' + r.status + ' ' + t.slice(0, 100));
   }
+}
+
+/* ist der name schon bekannt, still im hintergrund eintragen -
+   so wird der sieg nie von einer eingabemaske unterbrochen. */
+function autoSubmitIfKnown(){
+  const nm = savedName();
+  if (!pendingRun || pendingRun.sent || nm.length < 2) return false;
+  pendingRun.name = nm;
+  pendingRun.sent = true;
+  boardSubmit(pendingRun).catch(function(){ pendingRun.sent = 'fehler'; });
+  return true;
 }
 
 /* ---- je name nur der beste lauf ---- */
@@ -1385,16 +1413,18 @@ function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return ESCMAP[
 function fmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
 function secTxt(v){ return Number(v).toFixed(1).replace('.', ',') + 's'; }
 
-function openNameEntry(){
+function openNameEntry(mode){
+  boardMode = mode || boardMode;
   const won = pendingRun.won;
   document.getElementById('nmTitle').textContent = won ? 'MISSION COMPLETE' : 'TIME UP';
   document.getElementById('nmScore').textContent = fmt(pendingRun.score);
   document.getElementById('nmDetail').textContent =
-    pendingRun.kills + ' / ' + GOAL + ' GEGNER · ' + Number(pendingRun.secs).toFixed(1).replace('.', ',') + ' SEK';
+    pendingRun.kills + ' / ' + GOAL + ' GEGNER · ' +
+    Number(pendingRun.secs).toFixed(1).replace('.', ',') + ' SEK';
   document.getElementById('nmBonus').textContent =
     won ? ('davon ' + fmt(timeBonus) + ' Zeitbonus') : '';
   nmStat.textContent = ''; nmStat.className = 'stat';
-  nmIn.value = localStorage.getItem(LS_NAME) || '';
+  nmIn.value = savedName();
   nameOv.classList.add('on');
   setTimeout(function(){ try { nmIn.focus(); } catch(e){} }, 120);
 }
@@ -1407,23 +1437,28 @@ async function doSubmit(){
     try { nmIn.focus(); } catch(e){}
     return;
   }
-  try { localStorage.setItem(LS_NAME, nm); } catch(e){}
+  lsSet(LS_NAME, nm);
   pendingRun.name = nm;
+  pendingRun.sent = true;
   nmIn.blur();
   nmStat.textContent = 'wird gespeichert …'; nmStat.className = 'stat';
   let warn = '';
   try { await boardSubmit(pendingRun); }
-  catch(err){ warn = 'Konnte nicht online gespeichert werden – dein Ergebnis steht nur auf diesem Gerät.'; }
+  catch(err){
+    pendingRun.sent = 'fehler';
+    warn = 'Konnte nicht online gespeichert werden – dein Ergebnis steht nur auf diesem Gerät.';
+  }
   nameOv.classList.remove('on');
-  showBoard(false, warn);
+  updateInviteScore();
+  showBoard(boardMode, warn);
 }
 
-async function showBoard(viewOnly, warn){
-  boardOnly = !!viewOnly;
+async function showBoard(mode, warn){
+  boardMode = mode || 'view';
   blStat.textContent = warn || '';
   blStat.className = warn ? 'stat err' : 'stat';
-  blNext.textContent = boardOnly ? 'ZURÜCK' : (pendingRun && pendingRun.won ? 'WEITER' : 'NOCHMAL SPIELEN');
-  blName.style.display = (boardOnly || !pendingRun) ? 'none' : 'block';
+  blNext.textContent = (boardMode === 'loss') ? 'NOCHMAL SPIELEN' : 'ZURÜCK';
+  blName.style.display = (pendingRun && pendingRun.sent === true) ? 'block' : 'none';
   blWrap.innerHTML = '<div class="empty">wird geladen …</div>';
   boardOv.classList.add('on');
   boardOv.scrollTop = 0;
@@ -1443,7 +1478,7 @@ function renderBoard(rows){
     blWrap.innerHTML = '<div class="empty">Noch keine Einträge.<br>Sei der Erste!</div>';
     return;
   }
-  const me = (localStorage.getItem(LS_NAME) || '').trim().toLowerCase();
+  const me = savedName().toLowerCase();
   const medal = ['🥇', '🥈', '🥉'];
   let h = '<table class="bl"><tr><th>#</th><th>NAME</th><th class="r">PUNKTE</th><th class="r">ZEIT</th></tr>';
   rows.slice(0, 20).forEach(function(r, i){
@@ -1461,6 +1496,20 @@ function renderBoard(rows){
   blWrap.innerHTML = h;
 }
 
+/* ---- punktestand-hinweis auf der einladung ---- */
+function updateInviteScore(){
+  const el = document.getElementById('invScore');
+  if (!el) return;
+  if (!pendingRun){ el.innerHTML = ''; return; }
+  const pts = '<b>' + fmt(pendingRun.score) + ' Punkte</b>';
+  if (pendingRun.sent === true)
+    el.innerHTML = 'Dein Ergebnis: ' + pts + ' &#10003; eingetragen';
+  else if (pendingRun.sent === 'fehler')
+    el.innerHTML = 'Dein Ergebnis: ' + pts + ' &middot; konnte nicht online gespeichert werden';
+  else
+    el.innerHTML = 'Dein Ergebnis: ' + pts + '<br>Trag dich unten in die Bestenliste ein!';
+}
+
 /* ---- knoepfe ---- */
 document.getElementById('nmOk').addEventListener('click', doSubmit);
 nmIn.addEventListener('keydown', function(e){
@@ -1468,25 +1517,19 @@ nmIn.addEventListener('keydown', function(e){
 });
 document.getElementById('nmSkip').addEventListener('click', function(){
   nameOv.classList.remove('on');
-  const won = pendingRun && pendingRun.won;
-  pendingRun = { won: won, name: '', score: 0, kills: 0, secs: 0 };
-  showBoard(false, '');
+  showBoard(boardMode, '');
 });
 blName.addEventListener('click', function(){
   boardOv.classList.remove('on');
-  if (pendingRun) openNameEntry();
+  if (pendingRun) openNameEntry(boardMode);
 });
 blNext.addEventListener('click', function(){
   boardOv.classList.remove('on');
-  if (boardOnly){ boardOnly = false; return; }
-  const won = pendingRun && pendingRun.won;
-  pendingRun = null;
-  if (won){ state = 'LOAD'; loadP = 0; }
-  else startGame();
+  if (boardMode === 'loss'){ pendingRun = null; startGame(); }
 });
 document.getElementById('boardBtn').addEventListener('click', function(e){
   e.stopPropagation();
-  showBoard(true, '');
+  showBoard('view', '');
 });
 
 /* die beiden ecken-knoepfe liegen sonst ueber punkte- und zeitanzeige */

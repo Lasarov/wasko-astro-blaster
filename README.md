@@ -33,9 +33,13 @@ const SUPABASE_KEY = "";
 Solange sie leer sind, funktioniert das Spiel vollständig — die Bestenliste bleibt
 dann nur lokal im jeweiligen Browser und wird nicht geteilt.
 
-Der `anon`-Key ist bei Supabase ausdrücklich für den Einsatz im Browser gedacht.
+Gemeint ist der **Publishable key** (`sb_publishable_...`) aus *Settings → API Keys*.
+Er ist ausdrücklich für den Einsatz im Browser gedacht und darf öffentlich sein.
 Geschützt werden die Daten nicht durch den Key, sondern durch Row Level Security
 und die `CHECK`-Regeln der Tabelle.
+
+Ältere Projekte nutzen noch den `anon`-Key (ein JWT, beginnt mit `eyJ`). Auch der
+funktioniert — das Spiel erkennt am Format selbst, welche Header es senden muss.
 
 ### Tabelle anlegen
 
