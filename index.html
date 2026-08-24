@@ -259,7 +259,7 @@ ctx.imageSmoothingEnabled = false;
 
 const GOAL = 40, ROUND_TIME = 60;
 // balance-parameter (durch simulation eingestellt)
-const TUNE = { pace:0.72, ivMin:0.40, ivMax:1.02, jit:0.30, maxE:12, vy0:112, vyR:34, vyP:28, fire:0.215, fireB:0.155, fireC:0.17 };
+const TUNE = { pace:0.72, ivMin:0.34, ivBase:0.92, jit:0.30, maxE:12, vy0:112, vyR:34, vyP:28, fire:0.215, fireB:0.155, fireC:0.17 };
 
 /* ---------------- responsive skalierung ---------------- */
 const stage = document.getElementById('stage');
@@ -562,19 +562,23 @@ function drawSpr(def, cx, cy, px, rot){
 
 /* ---------------- game state ---------------- */
 let state = 'TITLE';
-let stars = [], bgo = [], enemies = [], bullets = [], parts = [], floats = [], drops = [];
+let stars = [], bgo = [], enemies = [], bullets = [], parts = [], floats = [], drops = [], extras = [];
 let player, kills, score, timeLeft, spawnT, shootT, shake, bgT, tRound, endStat;
 let timeUpT = 0, scoreFrom = 'WIN', scoreAsked = false, inviteQueued = false;
 let bubbly = 0, cheeseMode = 0, powCount = 0, timeBonus = 0;
+let combo = 0, comboBest = 0, escaped = 0;
+let extraT = 2.6, gotGood = 0, gotBad = 0;
 let winT = 0, loadP = 0, blink = 0;
 const keys = {};
 
 function reset(){
-  enemies.length = 0; bullets.length = 0; parts.length = 0; floats.length = 0; drops.length = 0;
+  enemies.length = 0; bullets.length = 0; parts.length = 0; floats.length = 0; drops.length = 0; extras.length = 0;
   player = { x: W/2, tx: W/2, y: 690, kb: 0, hit: 0, tilt: 0 };
   kills = 0; score = 0; timeLeft = ROUND_TIME; spawnT = 0.55; shootT = 0;
   shake = 0; bgT = 2.2; tRound = 0; bubbly = 0; cheeseMode = 0; powCount = 0;
   winT = 0; loadP = 0; timeBonus = 0;
+  combo = 0; comboBest = 0; escaped = 0;
+  extraT = 2.6; gotGood = 0; gotBad = 0;
 }
 function initStars(){
   stars = [];
@@ -804,11 +808,19 @@ function killEnemy(e, i, champ){
   const def = SPR[e.t];
   enemies.splice(i,1);
   kills++;
-  const pts = champ ? 150 : 100;
+  combo++;
+  if (combo > comboBest) comboBest = combo;
+  const mult = comboMult();
+  const pts = (champ ? 150 : 100) * mult;
   score += pts;
   burst(e.x, e.y, def.acc, champ ? 18 : 12, 190, 5);
   burst(e.x, e.y, '#ffffff', 5, 130, 3);
-  floatTxt(e.x, e.y-16, '+'+pts, '#ffe36e');
+  floatTxt(e.x, e.y-16, '+' + pts + (mult > 1 ? ' X' + mult : ''),
+           mult >= 4 ? '#ff5a9e' : mult >= 2 ? '#65ff9a' : '#ffe36e');
+  if (combo === 8 || combo === 16 || combo === 24 || combo === 32){
+    flash('KOMBO X' + comboMult() + '!', '#65ff9a');
+    SFX.ding();
+  }
   if (e.t === 'mood'){ // kurze sonne
     parts.push({ x:e.x, y:e.y, vx:0, vy:-14, life:0.6, max:0.6, c:'#ffd23a', s:14, sun:true });
   }
@@ -827,6 +839,61 @@ function killEnemy(e, i, champ){
     drops.push({ x: e.x, y: e.y, k, v: 95 });
   }
   if (kills >= GOAL) doWin();
+}
+
+/* ---------------- extra-dinger ----------------
+   das spiel selbst ist bewusst leicht - hier entsteht der koennens-
+   unterschied: gutes einsammeln, mieses ausweichen. beides kostet
+   keine zeit und aendert die rundenlaenge nicht. */
+const EXTRAS = [
+  { good:true,  val: 800, name:'CHAMPAGNER', c:'#ffe36e', c2:'#c9992f' },
+  { good:true,  val: 500, name:'GUTER KÄSE', c:'#f2d024', c2:'#b8900f' },
+  { good:true,  val: 400, name:'GUTE LAUNE', c:'#65ff9a', c2:'#2a9c5a' },
+  { good:false, val:-600, name:'DIE RECHNUNG', c:'#ff5a5a', c2:'#7a1010' },
+  { good:false, val:-450, name:'KATER',        c:'#b06bff', c2:'#3a1d5c' },
+  { good:false, val:-350, name:'ABWASCH',      c:'#8d93a3', c2:'#2b2b3a' }
+];
+function spawnExtra(){
+  const good = Math.random() < 0.55;
+  const pool = EXTRAS.filter(e => e.good === good);
+  const t = pool[(Math.random()*pool.length)|0];
+  extras.push({ t, x: 46 + Math.random()*(W-92), y: -40,
+                v: 105 + Math.random()*35, ph: Math.random()*6.28 });
+}
+function drawExtra(x){
+  const wob = Math.sin(tRound*3 + x.ph) * 6;
+  ctx.save(); ctx.translate(x.x + wob, x.y);
+  const d = x.t;
+  // ring
+  ctx.strokeStyle = d.c; ctx.lineWidth = 3;
+  const r = 22 + Math.sin(tRound*7 + x.ph)*2;
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.stroke();
+  ctx.fillStyle = d.c2; ctx.beginPath(); ctx.arc(0, 0, r-3, 0, Math.PI*2); ctx.fill();
+  if (d.good){
+    // flasche / keil / sonne - schlicht, aber eindeutig hell
+    ctx.fillStyle = d.c; ctx.fillRect(-5,-14,10,8); ctx.fillRect(-9,-6,18,18);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(-7,-4,4,14);
+  } else {
+    // zacken
+    ctx.fillStyle = d.c;
+    for (let i=0;i<8;i++){
+      const a = i/8*Math.PI*2 + tRound*1.5;
+      ctx.fillRect(Math.cos(a)*11 - 3, Math.sin(a)*11 - 3, 6, 6);
+    }
+  }
+  ctx.restore();
+  const lab = (d.val > 0 ? '+' : '') + d.val;
+  txtS(lab, x.x + wob, x.y + 26, 2, d.c, 'c');
+  txt(d.name, x.x + wob, x.y + 44, 1, d.c, 'c');
+}
+
+/* ---------------- kombo ----------------
+   ohne kombo landen alle sieger bei fast derselben punktzahl: jeder
+   trifft exakt 40 gegner. die kette belohnt, wer nichts durchlaesst. */
+function comboMult(){ return Math.min(5, 1 + Math.floor(combo / 8)); }
+function breakCombo(){
+  if (combo >= 8){ flash('KOMBO WEG!', '#ff6a6a'); beep('square', 300, 90, 0.22, 0.12); }
+  combo = 0;
 }
 
 /* ---------------- flash-nachrichten ---------------- */
@@ -980,8 +1047,10 @@ function update(dt){
     // ohne dass es sich fuer gute spieler gebremst anfuehlt
     const need = Math.max(1, GOAL - kills);
     const left = Math.max(2, timeLeft - 5);
-    let iv = (left / need) * TUNE.pace;
-    iv = Math.max(TUNE.ivMin, Math.min(TUNE.ivMax, iv));
+    /* grundrate bleibt konstant - wer schnell ist, wird nicht mehr ausgebremst.
+       die formel darf nur beschleunigen (nachzuegler auffangen), nie bremsen. */
+    let iv = Math.min(TUNE.ivBase, (left / need) * TUNE.pace);
+    iv = Math.max(TUNE.ivMin, iv);
     spawnT = iv * (1 - TUNE.jit/2 + Math.random()*TUNE.jit);
     if (enemies.length < TUNE.maxE) spawnEnemy();
   }
@@ -1001,7 +1070,7 @@ function update(dt){
     e.x += Math.cos(e.ph + e.t0*e.w) * e.amp * dt * 2.4;
     e.rot = Math.sin(e.ph + e.t0*1.6)*0.14;
     if (e.x < 28) e.x = 28; if (e.x > W-28) e.x = W-28;
-    if (e.y > H + 42){ enemies.splice(i,1); continue; }
+    if (e.y > H + 42){ enemies.splice(i,1); escaped++; breakCombo(); continue; }
 
     // treffer durch geschosse
     let dead = false;
@@ -1022,12 +1091,36 @@ function update(dt){
       if (pdx*pdx + pdy*pdy < (e.r + 34)*(e.r + 34)){
         enemies.splice(i,1);
         player.hit = 1.1;
+        breakCombo();
         player.kb = (pdx > 0 ? -1 : 1) * 380;
         shake = 9;
         burst(e.x, e.y, SPR[e.t].acc, 14, 200, 5);
         SFX.bonk();
         flash('AUTSCH!', '#ff6a6a');
       }
+    }
+  }
+
+  // extra-dinger
+  extraT -= dt;
+  if (extraT <= 0){
+    extraT = 3.0 + Math.random()*1.8;
+    if (extras.length < 3) spawnExtra();
+  }
+  for (let i=extras.length-1;i>=0;i--){
+    const x = extras[i];
+    x.y += x.v*dt;
+    if (x.y > H + 46){ extras.splice(i,1); continue; }
+    const wob = Math.sin(tRound*3 + x.ph) * 6;
+    const dx = (x.x + wob) - player.x, dy = x.y - (player.y - 14);
+    if (dx*dx + dy*dy < 56*56){
+      extras.splice(i,1);
+      const d = x.t;
+      score = Math.max(0, score + d.val);
+      floatTxt(x.x, x.y - 18, (d.val > 0 ? '+' : '') + d.val, d.c);
+      burst(x.x, x.y, d.c, 16, 190, 5);
+      if (d.good){ gotGood++; SFX.ding(); flash(d.name + '!', d.c); }
+      else { gotBad++; SFX.bonk(); shake = Math.max(shake, 7); flash(d.name + '!', d.c); }
     }
   }
 
@@ -1117,15 +1210,22 @@ function drawHud(){
   const tl = Math.ceil(timeLeft);
   txtS(String(tl), W-8, 23, 3, tl <= 10 ? '#ff6a6a' : '#8ff0ff', 'r');
 
-  // power-anzeige
+  // kombo-kette (links unter der punktzahl)
+  if (combo >= 3){
+    const m = comboMult();
+    const c = m >= 4 ? '#ff5a9e' : m >= 2 ? '#65ff9a' : '#ffe36e';
+    txtS('KOMBO ' + combo, 8, 58, 2, c, 'l');
+    if (m > 1) txtS('X' + m, 8 + tw('KOMBO ' + combo, 2) + 10, 54, 3, c, 'l');
+  }
+  // power-anzeige (rechts)
   let pw = null;
   if (bubbly > 0) pw = ['PRICKELN', '#ffe36e', bubbly/5.5];
   else if (cheeseMode > 0) pw = ['KÄSE', '#f2d024', cheeseMode/5.5];
   if (pw){
-    txt(pw[0], W/2, 58, 2, pw[1], 'c');
+    txt(pw[0], W-8, 58, 2, pw[1], 'r');
     const w2 = 96;
-    ctx.fillStyle = '#1b1440'; ctx.fillRect(W/2-w2/2, 74, w2, 4);
-    ctx.fillStyle = pw[1]; ctx.fillRect(W/2-w2/2, 74, w2*pw[2], 4);
+    ctx.fillStyle = '#1b1440'; ctx.fillRect(W-8-w2, 74, w2, 4);
+    ctx.fillStyle = pw[1]; ctx.fillRect(W-8-w2, 74, w2*pw[2], 4);
   }
 }
 function drawFlash(){
@@ -1197,6 +1297,7 @@ function drawPlay(){
   drawBg();
   for (const b of bullets) drawBullet(b);
   for (const d of drops) drawDrop(d);
+  for (const x of extras) drawExtra(x);
   for (const e of enemies){
     drawSpr(SPR[e.t], e.x, e.y, 4, e.rot);
     if (e.lab && e.y > 62) txt(SPR[e.t].name, e.x, e.y + 28, 1, SPR[e.t].acc, 'c');
@@ -1222,6 +1323,7 @@ function drawTimeUp(){
   txt('GESCHAFFT.', W/2, 452, 2, '#ffffff', 'c');
   txt('DAS SCHLECHTE GEWINNT NOCH.', W/2, 496, 2, '#8f86d8', 'c');
   txt('PUNKTE: ' + fmt(score), W/2, 534, 2, '#8ff0ff', 'c');
+  txt('BESTE KOMBO: ' + comboBest, W/2, 560, 2, '#8f86d8', 'c');
   btns = [];
   drawParts();
 }
@@ -1246,7 +1348,7 @@ function drawWin(){
     if (t > 0.35) txtS('40 / 40', W/2, 380, 8, '#ffe36e', 'c', '#7a4a00');
     if (t > 0.7)  txt('ALLES SCHLECHTE IST WEG.', W/2, 476, 2, '#ffffff', 'c');
     if (t > 0.95) txtS(fmt(score) + ' PUNKTE', W/2, 508, 3, '#8ff0ff', 'c', '#00303a');
-    if (t > 1.25) txt('INKL. ' + fmt(timeBonus) + ' ZEITBONUS', W/2, 552, 2, '#ffd23a', 'c');
+    if (t > 1.25) txt('BESTE KOMBO: ' + comboBest + '   ZEITBONUS: ' + fmt(timeBonus), W/2, 552, 2, '#ffd23a', 'c');
   }
   btns = [];
 }

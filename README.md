@@ -17,8 +17,15 @@ Keine externen Bibliotheken, keine CDN-Abhängigkeiten, keine Schriftarten von a
 - Interne Auflösung 480 × 800, per CSS responsiv skaliert (`image-rendering: pixelated`)
 - Steuerung: Finger bewegen (mobil) oder Pfeiltasten (Desktop), Feuer läuft automatisch
 - Ziel: 40 Gegner in 60 Sekunden
-- Punkte: 100 je Gegner, 150 für Champagnerkorken-Treffer, 250 je Power-up,
-  dazu 100 Punkte pro verbleibender Sekunde als Zeitbonus
+- Punkte: 100 je Gegner (150 mit Champagnerkorken), multipliziert mit der
+  Kombo-Kette (×1 bis ×5, reißt wenn ein Gegner durchkommt oder man
+  zusammenstößt), 250 je Power-up, 100 pro verbleibender Sekunde Zeitbonus
+- Extra-Dinger fliegen durchs Bild: Gutes einsammeln (+400 bis +800),
+  Mieses ausweichen (−350 bis −600)
+
+Das Spiel selbst ist bewusst leicht, damit jeder gewinnt und die Einladung
+sieht. Kombo und Extra-Dinger sorgen für den Unterschied in der Bestenliste,
+ohne die Rundenlänge zu verändern — sie liegt weiter bei 35 bis 50 Sekunden.
 
 ## Bestenliste
 
@@ -47,7 +54,7 @@ funktioniert — das Spiel erkennt am Format selbst, welche Header es senden mus
 create table public.scores (
   id         bigint generated always as identity primary key,
   name       text        not null check (char_length(name) between 2 and 14),
-  score      int         not null check (score between 0 and 12000),
+  score      int         not null check (score between 0 and 40000),
   kills      int         not null check (kills between 0 and 40),
   secs       numeric(4,1) not null check (secs between 0 and 60),
   won        boolean     not null default false,
