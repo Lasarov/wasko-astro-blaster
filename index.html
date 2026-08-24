@@ -1489,12 +1489,25 @@ document.getElementById('boardBtn').addEventListener('click', function(e){
   showBoard(true, '');
 });
 
+/* die beiden ecken-knoepfe liegen sonst ueber punkte- und zeitanzeige */
+const musBtnEl = document.getElementById('mus');
+const brdBtnEl = document.getElementById('boardBtn');
+let chromeKey = null;
+function syncChrome(){
+  const key = (state !== 'PLAY') + '|' + (state === 'TITLE');
+  if (key === chromeKey) return;
+  chromeKey = key;
+  musBtnEl.style.display = (state !== 'PLAY') ? '' : 'none';
+  brdBtnEl.style.display = (state === 'TITLE') ? '' : 'none';
+}
+
 /* ---------------- loop ---------------- */
 let last = performance.now();
 function frame(now){
   let dt = (now - last)/1000; last = now;
   if (dt > 1/25) dt = 1/25;
 
+  syncChrome();
   if (state === 'PLAY') update(dt);
   else { update(dt); updateEnd(dt); }
 
