@@ -1,0 +1,61 @@
+# WASKO ASTRO BLASTER
+
+Ein kleines Retro-Arcade-Spiel im Stil der späten 80er, überarbeitet von jemandem
+mit Windows 98, Paint und mittelmäßigen Multimedia-Kenntnissen.
+
+Wasko verteidigt seine Party gegen schlechten Käse, schlechte Musik, schlechte
+Laune und schlechte Drinks — bewaffnet mit Weinkorken.
+
+**Spielen:** einfach die Seite öffnen. Kein Login, keine Installation, keine App.
+
+## Technik
+
+Alles steckt in einer einzigen `index.html`: HTML, CSS, Canvas-Spiel, Pixel-Font,
+Sound und Musik (WebAudio, komplett synthetisiert) sowie die Grafik als Base64.
+Keine externen Bibliotheken, keine CDN-Abhängigkeiten, keine Schriftarten von außen.
+
+- Interne Auflösung 480 × 800, per CSS responsiv skaliert (`image-rendering: pixelated`)
+- Steuerung: Finger bewegen (mobil) oder Pfeiltasten (Desktop), Feuer läuft automatisch
+- Ziel: 40 Gegner in 60 Sekunden
+- Punkte: 100 je Gegner, 150 für Champagnerkorken-Treffer, 250 je Power-up,
+  dazu 100 Punkte pro verbleibender Sekunde als Zeitbonus
+
+## Bestenliste
+
+Die Bestenliste läuft über [Supabase](https://supabase.com). Die beiden Werte stehen
+oben im `<script>`-Block von `index.html`:
+
+```js
+const SUPABASE_URL = "";
+const SUPABASE_KEY = "";
+```
+
+Solange sie leer sind, funktioniert das Spiel vollständig — die Bestenliste bleibt
+dann nur lokal im jeweiligen Browser und wird nicht geteilt.
+
+Der `anon`-Key ist bei Supabase ausdrücklich für den Einsatz im Browser gedacht.
+Geschützt werden die Daten nicht durch den Key, sondern durch Row Level Security
+und die `CHECK`-Regeln der Tabelle.
+
+### Tabelle anlegen
+
+```sql
+create table public.scores (
+  id         bigint generated always as identity primary key,
+  name       text        not null check (char_length(name) between 2 and 14),
+  score      int         not null check (score between 0 and 12000),
+  kills      int         not null check (kills between 0 and 40),
+  secs       numeric(4,1) not null check (secs between 0 and 60),
+  won        boolean     not null default false,
+  created_at timestamptz not null default now()
+);
+
+alter table public.scores enable row level security;
+
+create policy "jeder darf lesen"    on public.scores for select to anon using (true);
+create policy "jeder darf eintragen" on public.scores for insert to anon with check (true);
+
+create index scores_rang on public.scores (score desc, secs asc);
+```
+
+Es zählt je Name nur der beste Lauf; die Auswahl passiert beim Anzeigen.
