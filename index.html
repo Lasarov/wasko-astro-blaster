@@ -173,7 +173,7 @@
     <div class="wordart big40">40</div>
     <div class="tag">Vier Dekaden &ndash; ein Grund zu feiern!</div>
 
-    <div class="marq"><span>&#9733; SAVE THE DATE &#9733; 2. JANUAR &#9733; 17:00 UHR &#9733; KJH GORBITZ &raquo;JUCHTEN&laquo; &#9733; DRESDEN &#9733; BRING GUTE LAUNE MIT &#9733;</span></div>
+    <div class="marq"><span>&#9733; TERMIN VORMERKEN &#9733; 2. JANUAR &#9733; 17:00 UHR &#9733; KJH GORBITZ &raquo;JUCHTEN&laquo; &#9733; DRESDEN &#9733; BRING GUTE LAUNE MIT &#9733;</span></div>
 
     <div class="win">
       <div class="tb"><span>&#128197; Einladung.exe</span><span><i>_</i><i>&#9633;</i><i>&#10005;</i></span></div>
@@ -208,8 +208,8 @@
       <button class="btn98" id="bMap" type="button">&#128205; Ort &ouml;ffnen</button>
       <button class="btn98" id="bAgain" type="button">&#127918; Nochmal spielen</button>
     </div>
-    <div class="foot">WASKO ASTRO BLASTER v1.0 &nbsp;&#9679;&nbsp; Party Defense Force<br>
-      Best viewed in 800&times;600 &#9679; 256 Farben &#9679; Sound Blaster kompatibel</div>
+    <div class="foot">WASKO ASTRO BLASTER v1.0 &nbsp;&#9679;&nbsp; Party-Abwehr-Kommando<br>
+      Optimiert f&uuml;r 800&times;600 &#9679; 256 Farben &#9679; Sound-Blaster-kompatibel</div>
   </div>
 </div>
 
@@ -217,7 +217,7 @@
 <!-- ---------- namenseingabe (arcade: erst eintragen, dann belohnung) ---------- -->
 <div id="nameOv" class="ov">
   <div class="ovin">
-    <div class="ovt" id="nmTitle">MISSION COMPLETE</div>
+    <div class="ovt" id="nmTitle">MISSION ERF&Uuml;LLT</div>
     <div class="ovs">TRAG DICH IN DIE BESTENLISTE EIN</div>
     <div class="scorebox">
       <div class="n" id="nmScore">0</div>
@@ -522,19 +522,19 @@ faceImg.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAAAsCAYAAAAehFo
 
 /* ---------------- sprites (12x12) ---------------- */
 const SPR = {
-  cheese: { pal:{K:'#3a2a08',Y:'#f2d024',O:'#b8900f',G:'#7bb02a',W:'#ffffff'}, acc:'#f2d024', name:'BAD CHEESE',
+  cheese: { pal:{K:'#3a2a08',Y:'#f2d024',O:'#b8900f',G:'#7bb02a',W:'#ffffff'}, acc:'#f2d024', name:'MIESER KÄSE',
     d:["...KKKKKK...","..KYYYYYYK..",".KYYGYYYGYK.","KYOOYYYYYYYK","KYWWYYYYWWYK","KYWKYYYYKWYK",
        "KYYYYYOOYYYK","KYGYYYYYYGYK","KYYYKKKKYYYK","KYYKYYYYKYYK",".KYYYYYYYYK.","..KKKKKKKK.."]},
-  music:  { pal:{K:'#1c0733',N:'#ff4fd8',W:'#ffffff'}, acc:'#ff4fd8', name:'BAD MUSIC',
+  music:  { pal:{K:'#1c0733',N:'#ff4fd8',W:'#ffffff'}, acc:'#ff4fd8', name:'MIESE MUSIK',
     d:["......KKK...","......KNNKK.","......KNNKNK","......KNNKNK","......KNNKNK","......KNNKK.",
        "......KNNK..","..KKK.KNNK..",".KNNNKKNNK..","KNWNWNNNNK..","KNNKKKNNK...",".KKKKKKKK..."]},
-  mood:   { pal:{K:'#2b2b3a',G:'#8d93a3',W:'#ffffff',L:'#63b6ff'}, acc:'#a9b0c2', name:'BAD MOOD',
+  mood:   { pal:{K:'#2b2b3a',G:'#8d93a3',W:'#ffffff',L:'#63b6ff'}, acc:'#a9b0c2', name:'MIESE LAUNE',
     d:["...KKKK.....","..KGGGGKKK..",".KGGGGGGGGK.","KGGGGGGGGGGK","KGWWGGGGWWGK","KGWKGGGGKWGK",
        "KGGGGGGGGGGK","KGGGKKKKGGGK",".KGKGGGGKGK.","..KKKKKKKK..","...L..L..L..","..L..L..L..."]},
-  drink:  { pal:{K:'#0f2e1a',G:'#5ee06a',W:'#ffffff'}, acc:'#5ee06a', name:'BAD DRINK',
+  drink:  { pal:{K:'#0f2e1a',G:'#5ee06a',W:'#ffffff'}, acc:'#5ee06a', name:'MIESER DRINK',
     d:["KKKKKKKKKKKK","KGGGGGGGGGGK",".KGGGGGGGGK.",".KGGWGGWGGK.","..KGKGGKGK..","..KGGGGGGK..",
        "...KGKKGK...","...KGGGGK...","....KGGK....",".....KK.....","....KKKK....","...KKKKKK..."]},
-  joke:   { pal:{K:'#3a1d5c',J:'#ffe36e',W:'#ffffff'}, acc:'#ffe36e', name:'BAD JOKE',
+  joke:   { pal:{K:'#3a1d5c',J:'#ffe36e',W:'#ffffff'}, acc:'#ffe36e', name:'MIESER WITZ',
     d:["..KKKKKKKK..",".KJJJJJJJJK.","KJJJJJJJJJJK","KJWWJJJJWWJK","KJWKJJJJKWJK","KJJJJJJJJJJK",
        "KJJJJJJJJJJK","KJJKKKKKKJJK","KJJJJJJJJJJK",".KJJJJJJJJK.","..KKJJKKKK..","....KK......"]}
 };
@@ -591,12 +591,12 @@ reset();
 /* ---------------- hintergrund-objekte (easter eggs) ---------------- */
 const BGO = [
   { kind:'planet', label:'BRIE-7',    w:120 },
-  { kind:'sat',    label:'WINE ONLINE', w:96 },
-  { kind:'station',label:'CHATEAU-1', w:104 },
-  { kind:'sign',   label:'NO BAD VIBES', w:110 },
-  { kind:'sign',   label:'SECTOR 40', w:90 },
-  { kind:'rocket', label:'CUVEE 1986', w:70 },
-  { kind:'sign',   label:'VIN TRES MAUVAIS', w:130 }
+  { kind:'sat',    label:'WEIN ONLINE', w:96 },
+  { kind:'station',label:'WEINGUT-1', w:104 },
+  { kind:'sign',   label:'KEINE MIESE LAUNE', w:130 },
+  { kind:'sign',   label:'SEKTOR 40', w:90 },
+  { kind:'rocket', label:'JAHRGANG 1986', w:70 },
+  { kind:'sign',   label:'SEHR MIESER WEIN', w:126 }
 ];
 let lastBgo = -1;
 function spawnBgo(){
@@ -744,7 +744,7 @@ function drawBullet(b){
 }
 
 /* ---------------- power-ups ---------------- */
-const POW = { bubbly:{c:'#ffe36e',n:'BUBBLY'}, magnum:{c:'#d8a75e',n:'MAGNUM'}, cheese:{c:'#f2d024',n:'CHEESE'} };
+const POW = { bubbly:{c:'#ffe36e',n:'PRICKELN'}, magnum:{c:'#d8a75e',n:'MAGNUM'}, cheese:{c:'#f2d024',n:'KÄSE'} };
 function drawDrop(d){
   const bob = Math.sin(tRound*6 + d.y*0.05)*3;
   ctx.save(); ctx.translate(d.x, d.y + bob);
@@ -784,7 +784,7 @@ function fire(){
 function fireMagnum(){
   bullets.push({ x: player.x, y: player.y - 70, vx: 0, vy: -420, k:'magnum', r: 30, pierce: true, rot: 0, spin: 1.5 });
   SFX.magnum();
-  flash('MAGNUM CORK!', '#d8a75e');
+  flash('MAGNUM-KORKEN!', '#d8a75e');
 }
 
 /* ---------------- gegner ---------------- */
@@ -1041,8 +1041,8 @@ function update(dt){
       drops.splice(i,1);
       score += 250; SFX.ding();
       burst(d.x, d.y, POW[d.k].c, 16, 180, 4);
-      if (d.k === 'bubbly'){ bubbly = 5.5; flash('BUBBLY MODE!', '#ffe36e'); }
-      else if (d.k === 'cheese'){ cheeseMode = 5.5; flash('CHEESE REVENGE!', '#f2d024'); }
+      if (d.k === 'bubbly'){ bubbly = 5.5; flash('PRICKEL-MODUS!', '#ffe36e'); }
+      else if (d.k === 'cheese'){ cheeseMode = 5.5; flash('KÄSE-RACHE!', '#f2d024'); }
       else { fireMagnum(); }
     }
   }
@@ -1119,8 +1119,8 @@ function drawHud(){
 
   // power-anzeige
   let pw = null;
-  if (bubbly > 0) pw = ['BUBBLY', '#ffe36e', bubbly/5.5];
-  else if (cheeseMode > 0) pw = ['CHEESE', '#f2d024', cheeseMode/5.5];
+  if (bubbly > 0) pw = ['PRICKELN', '#ffe36e', bubbly/5.5];
+  else if (cheeseMode > 0) pw = ['KÄSE', '#f2d024', cheeseMode/5.5];
   if (pw){
     txt(pw[0], W/2, 58, 2, pw[1], 'c');
     const w2 = 96;
@@ -1151,7 +1151,7 @@ function drawTitle(){
   const bob = Math.sin(blink*2)*3;
   txtS('WASKO', W/2, 46+bob, 8, '#ffe36e', 'c', '#7a2a00');
   txtS('ASTRO BLASTER', W/2, 112+bob, 4, '#ff5a9e', 'c', '#3a0030');
-  txt('PARTY DEFENSE FORCE', W/2, 152, 2, '#8ff0ff', 'c');
+  txt('PARTY-ABWEHR-KOMMANDO', W/2, 152, 2, '#8ff0ff', 'c');
 
   // wasko-vorschau
   ctx.save();
@@ -1172,8 +1172,8 @@ function drawTitle(){
     ['DER WEIN IST KALT.', '#c9c2ff'],
     ['DIE KORKEN SIND GELADEN.', '#c9c2ff'],
     ['', ''],
-    ['DOCH SCHLECHTER KÄSE, SCHLECHTE', '#ff9a9a'],
-    ['MUSIK, LAUNE UND DRINKS GREIFEN AN.', '#ff9a9a'],
+    ['DOCH MIESER KÄSE, MIESE MUSIK,', '#ff9a9a'],
+    ['LAUNE UND DRINKS GREIFEN AN.', '#ff9a9a'],
     ['', ''],
     ['ALLES MUSS WEG. BESIEGE 40 GEGNER.', '#65ff9a'],
     ['', ''],
@@ -1186,7 +1186,7 @@ function drawTitle(){
   // start button
   btns = [];
   button(W/2-112, 606, 224, 62, 'START', 5, startGame, '#65ff9a');
-  if (Math.floor(blink*2) % 2 === 0) txt('PRESS START', W/2, 690, 2, '#ffe36e', 'c');
+  if (Math.floor(blink*2) % 2 === 0) txt('START DRÜCKEN', W/2, 690, 2, '#ffe36e', 'c');
   txt('FINGER BEWEGEN - AUTO-FEUER', W/2, 724, 2, '#8f86d8', 'c');
   drawParts();
 }
@@ -1216,12 +1216,12 @@ function drawPlay(){
 function drawTimeUp(){
   drawPlay0();
   ctx.fillStyle = 'rgba(4,2,18,.86)'; ctx.fillRect(0,0,W,H);
-  txtS('TIME UP', W/2, 232, 7, '#ff5a5a', 'c', '#4a0000');
+  txtS('ZEIT UM!', W/2, 232, 7, '#ff5a5a', 'c', '#4a0000');
   txt('DU HAST', W/2, 344, 2, '#ffffff', 'c');
   txtS(endStat + ' / ' + GOAL, W/2, 376, 6, '#ffe36e', 'c');
   txt('GESCHAFFT.', W/2, 452, 2, '#ffffff', 'c');
   txt('DAS SCHLECHTE GEWINNT NOCH.', W/2, 496, 2, '#8f86d8', 'c');
-  txt('PUNKTE: ' + score, W/2, 534, 2, '#8ff0ff', 'c');
+  txt('PUNKTE: ' + fmt(score), W/2, 534, 2, '#8ff0ff', 'c');
   btns = [];
   drawParts();
 }
@@ -1241,7 +1241,7 @@ function drawWin(){
     ctx.save();
     ctx.translate(W/2, 320); ctx.scale(sc, sc); ctx.translate(-W/2, -320);
     txtS('MISSION', W/2, 210, 6, '#65ff9a', 'c', '#003a18');
-    txtS('COMPLETE', W/2, 272, 6, '#65ff9a', 'c', '#003a18');
+    txtS('ERFÜLLT', W/2, 272, 6, '#65ff9a', 'c', '#003a18');
     ctx.restore();
     if (t > 0.35) txtS('40 / 40', W/2, 380, 8, '#ffe36e', 'c', '#7a4a00');
     if (t > 0.7)  txt('ALLES SCHLECHTE IST WEG.', W/2, 476, 2, '#ffffff', 'c');
@@ -1416,7 +1416,7 @@ function secTxt(v){ return Number(v).toFixed(1).replace('.', ',') + 's'; }
 function openNameEntry(mode){
   boardMode = mode || boardMode;
   const won = pendingRun.won;
-  document.getElementById('nmTitle').textContent = won ? 'MISSION COMPLETE' : 'TIME UP';
+  document.getElementById('nmTitle').textContent = won ? 'MISSION ERFÜLLT' : 'ZEIT UM!';
   document.getElementById('nmScore').textContent = fmt(pendingRun.score);
   document.getElementById('nmDetail').textContent =
     pendingRun.kills + ' / ' + GOAL + ' GEGNER · ' +
