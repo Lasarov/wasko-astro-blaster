@@ -1531,7 +1531,10 @@ function openNameEntry(mode){
   setTimeout(function(){ try { nmIn.focus(); } catch(e){} }, 120);
 }
 
+let submitting = false;
 async function doSubmit(){
+  if (submitting) return;                       /* doppelklick abfangen */
+  if (pendingRun && pendingRun.sent === true) return;  /* schon eingetragen */
   const nm = nmIn.value.trim().slice(0, 14);
   if (nm.length < 2){
     nmStat.textContent = 'Bitte mindestens 2 Zeichen eingeben.';
@@ -1539,6 +1542,7 @@ async function doSubmit(){
     try { nmIn.focus(); } catch(e){}
     return;
   }
+  submitting = true;
   lsSet(LS_NAME, nm);
   pendingRun.name = nm;
   pendingRun.sent = true;
@@ -1550,6 +1554,7 @@ async function doSubmit(){
     pendingRun.sent = 'fehler';
     warn = 'Konnte nicht online gespeichert werden – dein Ergebnis steht nur auf diesem Gerät.';
   }
+  submitting = false;
   nameOv.classList.remove('on');
   updateInviteScore();
   showBoard(boardMode, warn);
@@ -1560,7 +1565,7 @@ async function showBoard(mode, warn){
   blStat.textContent = warn || '';
   blStat.className = warn ? 'stat err' : 'stat';
   blNext.textContent = (boardMode === 'loss') ? 'NOCHMAL SPIELEN' : 'ZURÜCK';
-  blName.style.display = (pendingRun && pendingRun.sent === true) ? 'block' : 'none';
+  blName.style.display = 'none';   /* wuerde denselben lauf erneut eintragen */
   blWrap.innerHTML = '<div class="empty">wird geladen …</div>';
   boardOv.classList.add('on');
   boardOv.scrollTop = 0;
