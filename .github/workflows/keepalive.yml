@@ -1,0 +1,54 @@
+name: Supabase wachhalten
+
+# Supabase pausiert Projekte der Gratis-Stufe nach 7 Tagen ohne Zugriff.
+# Bis zur Feier am 2. Januar sind es deutlich mehr - also alle zwei Tage
+# einmal anklopfen. Der Publishable key darf oeffentlich im Code stehen,
+# deshalb ist hier kein Geheimnis noetig.
+
+on:
+  schedule:
+    - cron: '23 9 */2 * *'
+  workflow_dispatch:        # laesst sich auch von Hand ausloesen
+
+permissions:
+  contents: write
+
+jobs:
+  anklopfen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Datenbank anstupsen
+        run: |
+          URL="https://jtbestohquoaucziahse.supabase.co"
+          KEY="sb_publishable_ml6X4fgZ8c1x72Y7R2LXXg_1sdOYplV"
+          code=$(curl -s -m 30 -o /tmp/antwort.txt -w "%{http_code}" \
+            "$URL/rest/v1/scores?select=name&limit=1" -H "apikey: $KEY")
+          echo "HTTP $code"
+          head -c 200 /tmp/antwort.txt || true
+          echo
+          if [ "$code" != "200" ]; then
+            echo "::error::Supabase antwortet nicht (HTTP $code) - Projekt vermutlich pausiert."
+            echo "Im Dashboard entpausieren: https://supabase.com/dashboard/project/jtbestohquoaucziahse"
+            exit 1
+          fi
+          echo "Datenbank ist wach."
+
+      # GitHub schaltet geplante Ablaeufe ab, wenn das Repository 60 Tage
+      # lang unberuehrt bleibt - das waere Mitte Dezember, kurz vor der
+      # Feier. Ein winziger Eintrag auf einem Nebenzweig haelt es wach,
+      # ohne main oder die veroeffentlichte Seite anzufassen.
+      - name: Repository wach halten
+        run: |
+          git clone --depth 1 --branch keepalive \
+            "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" zweig 2>/dev/null \
+            || git clone --depth 1 "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" zweig
+          cd zweig
+          git checkout -B keepalive
+          git rm -rq . 2>/dev/null || true
+          date -u +"Zuletzt angestupst: %Y-%m-%d %H:%M UTC" > ZULETZT.txt
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ZULETZT.txt
+          git commit -qm "Wachhalter $(date -u +%Y-%m-%d)" || exit 0
+          git push -q --force origin keepalive
+          echo "Nebenzweig aktualisiert."
