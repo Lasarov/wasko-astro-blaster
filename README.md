@@ -61,6 +61,15 @@ create table public.scores (
   created_at timestamptz not null default now()
 );
 
+-- Seit dem 30. Oktober 2026 vergibt Supabase diese Rechte nicht mehr von
+-- selbst an neue Tabellen im Schema "public". Ohne sie antwortet die API
+-- mit "permission denied", und zwar unabhängig von den Regeln darunter.
+-- Bewusst kein update/delete für anon: so kann niemand die Liste leeren
+-- oder fremde Ergebnisse verändern.
+grant select, insert on public.scores to anon;
+grant select, insert on public.scores to authenticated;
+grant all            on public.scores to service_role;
+
 alter table public.scores enable row level security;
 
 create policy "jeder darf lesen"    on public.scores for select to anon using (true);
@@ -68,5 +77,9 @@ create policy "jeder darf eintragen" on public.scores for insert to anon with ch
 
 create index scores_rang on public.scores (score desc, secs asc);
 ```
+
+Zwei Stufen sichern die Tabelle: die `grant`-Rechte oben entscheiden, ob die
+API überhaupt an die Tabelle kommt, die `policy`-Regeln darunter, welche
+Zeilen. Beides ist nötig.
 
 Es zählt je Name nur der beste Lauf; die Auswahl passiert beim Anzeigen.
